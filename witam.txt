@@ -1,0 +1,1 @@
+test: Czy mój plik trafi na githuba? -- s.g.
