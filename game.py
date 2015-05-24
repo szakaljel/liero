@@ -1,8 +1,11 @@
+#!/usr/bin/python
+# -*- coding: utf-8-*-
+
 import pygame, sys
 from pygame.locals import *
 import client
 import server
-
+from sprite import ImageInfo, Sprite
 
 
 class worm(object):
@@ -143,6 +146,26 @@ class controller_server(object):
 			self.worm.append(worm())
 			self.worm[i].ident=i
 		self.screen=screen
+		
+		self.sprites = set()
+		# sprite, przykład pierwszy: pociski o prędkościach (1,2) i (2,1) i czasie życia 400 wykonań pętli
+		missile_info = ImageInfo([5,5], [10, 10], 3, 400)
+		missile_image = pygame.image.load("images/shot3.png")
+		
+		missile_position = (0,79)
+		missile_velocity = (1,2)
+		self.sprites.add(Sprite(missile_position, missile_velocity, 0, 0, missile_image, missile_info))
+		
+		missile_position = (0,100)
+		missile_velocity = (2,1)
+		self.sprites.add(Sprite(missile_position, missile_velocity, 0, 0, missile_image, missile_info))
+
+		# sprite, przykład drugi: animacja eksplozji (animated = True) o czasie życia 24 wykonań pętli
+		explosion_info = ImageInfo([64, 64], [128, 128], 17, 24, True)
+		explosion_image = pygame.image.load("images/explosion_orange.png")
+		explosion_position = (125,0)
+		explosion_velocity = (0,0)
+		self.sprites.add(Sprite(explosion_position, explosion_velocity, 0, 0, explosion_image, explosion_info))
 
 	def loop(self,port_ip):
 		FPS = 30 # frames per second setting
@@ -195,6 +218,21 @@ class controller_server(object):
 			self.screen.fill((255,255,255))
 			for w in self.worm:
 				w.draw(self.screen)
+				
+				
+			# rysuję sprite'y
+			for sprite in self.sprites:
+			    sprite.draw(self.screen)
+			    
+			# robię update sprite'om. Trzeba pracować na kopii zbioru, 
+			# ponieważ usuwamy obiekty, których żywot dobiegł końca,
+			# a usuwanie z czegoś po czym iterujemy to zło.
+			lst = set(self.sprites)
+			for sprite in lst:
+			    if sprite.update():
+			    	# upadate zwraca True, jeżeli obiekt jest do usunięcia
+			    	self.sprites.remove(sprite)
+			    	
 
 			pygame.display.update()
 			fpsClock.tick(FPS)

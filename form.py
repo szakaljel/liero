@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8-*-
+
 import pygame, sys
 from pygame.locals import *
 import eztext
@@ -58,7 +61,7 @@ class form(object):
 		for i in self.inputs:
 			i.draw(screen)
 	
-	#funkcja obsluhujaca inputboxy
+	#funkcja obslugujaca inputboxy
 	def loop(self,screen):
 		tick=0
 		FPS = 30 # frames per second setting
@@ -76,7 +79,7 @@ class form(object):
 							index=self.inputs.index(self.focus)
 							self.focus.rest=""
 							self.focus=self.inputs[(index+1)%l]
-					#enter powoduje zwrucenie zwartosci inputboxow
+					#enter powoduje zwrócenie zwartosci inputboxow
 					elif event.key==pygame.K_RETURN:
 						ret=[]
 						for el in self.inputs:
