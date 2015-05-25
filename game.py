@@ -5,7 +5,9 @@ import pygame, sys
 from pygame.locals import *
 import client
 import server
+import math
 from sprite import ImageInfo, Sprite
+from map import map
 
 
 class worm(object):
@@ -19,8 +21,8 @@ class worm(object):
 		self.max_x=800
 		self.max_y=600
 
-	def draw(self,screen):
-		screen.blit(self.img,(self.x,self.y))
+	def draw(self,screen,tr_x,tr_y):
+		screen.blit(self.img,(self.x-tr_x,self.y-tr_y))
 
 	def key_fun(self,key,map=None):
 		
@@ -86,6 +88,11 @@ class controller(object):
 		FPS = 30 # frames per second setting
 		fpsClock = pygame.time.Clock()
 
+		#incjalizacja i wczytanie mapy
+		map1=map()
+		map1.loadMap("map")
+
+
 		up=0
 		down=0
 		left=0
@@ -96,7 +103,11 @@ class controller(object):
 		while val==None:
 			val=client.recv();
 		self.ident=val[0];
-		print"trlalala"
+		
+		#modyfikacja granic poruszania worma
+		self.worm[self.ident].max_x=map1.xlen*map1.x
+		self.worm[self.ident].max_y=map1.ylen*map1.y
+
 		while True:
 			for event in pygame.event.get():
 
@@ -130,8 +141,11 @@ class controller(object):
 
 
 			self.screen.fill((255,255,255))
+			#odrysowanie mapy zwrocono wektor translacji
+			(tr_x,tr_y) = map1.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y)
+			
 			for w in self.worm:
-				w.draw(self.screen)
+				w.draw(self.screen,tr_x,tr_y)
 
 			pygame.display.update()
 			fpsClock.tick(FPS)
@@ -171,12 +185,20 @@ class controller_server(object):
 		FPS = 30 # frames per second setting
 		fpsClock = pygame.time.Clock()
 
+		#incjalizacja i wczytanie mapy
+		map1=map()
+		map1.loadMap("map")
+
 		up=0
 		down=0
 		left=0
 		right=0
 
 		server.init(port_ip)
+		
+		#modyfikacja granic poruszania worma
+		self.worm[self.ident].max_x=map1.xlen*map1.x
+		self.worm[self.ident].max_y=map1.ylen*map1.y
 
 		while True:
 			for event in pygame.event.get():
@@ -216,8 +238,10 @@ class controller_server(object):
 				val=server.recv()
 
 			self.screen.fill((255,255,255))
+			#odrysowanie mapy zwrocono wektor translacji
+			(tr_x,tr_y) = map1.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y)
 			for w in self.worm:
-				w.draw(self.screen)
+				w.draw(self.screen,tr_x,tr_y)
 				
 				
 			# rysuję sprite'y
