@@ -21,10 +21,18 @@ class map(object):
 		re_size=4
 		file=open(path,"rb")
 
+		#wczytanie pozycji graczy
+		ret=[]
+		for i in range(4):
+			tmp=file.readline()
+			tab=tmp.split()
+			ret.append((int(tab[0])*self.x*re_size,int(tab[1])*self.y*re_size))
+
 		#petla wczytuje mape po lini przeksztalca 1 znak na re_size x re_size
 		while True:
 			tmp=file.readline()
 			if tmp!='':
+				tmp=tmp[0:-2]
 				for i in range(re_size):
 					self.tab.append([])
 				for znak in tmp:
@@ -37,6 +45,8 @@ class map(object):
 		#rozmiar mapy segmenty
 		self.ylen=len(self.tab)
 		self.xlen=len(self.tab[0])
+		
+		return ret
 		
 
 	def drawMap(self,screen,x,y):
@@ -90,7 +100,7 @@ class map(object):
 
 		
 
-		sr_segment[0]-=int(segment_x/2)
+		sr_segment[0]-=int(math.ceil(segment_x/2))
 		sr_segment[1]-=int(math.ceil(segment_y/2))
 
 

@@ -10,6 +10,11 @@ from sprite import ImageInfo, Sprite
 from map import map
 
 
+up=0
+down=1
+left=2
+right=3
+
 class worm(object):
 	def __init__(self):
 		object.__init__(self)
@@ -18,57 +23,59 @@ class worm(object):
 		self.x=0
 		self.y=0
 		self.img=self.background=pygame.image.load("images/cat.png")
+		self.img=pygame.transform.scale(self.img, (40, 40))
 		self.max_x=800
 		self.max_y=600
+
 
 	def draw(self,screen,tr_x,tr_y):
 		screen.blit(self.img,(self.x-tr_x,self.y-tr_y))
 
-	def key_fun(self,key,map=None):
+	def key_fun(self,direct,map=None):
 		
-		if key==pygame.K_UP:
+		if direct[up]:
 			self.y-=10
 			if self.y<0:
 				self.y=0
-		elif key==pygame.K_DOWN:
+		if direct[down]:
 			self.y+=10
 			if self.y>self.max_y:
 				self.y=self.max_y
-		elif key==pygame.K_LEFT:
+		if direct[left]:
 			self.x-=10
 			if self.x<0:
 				self.x=0
-		elif key==pygame.K_RIGHT:
+		if direct[right]:
 			self.x+=10
 			if self.x>self.max_x:
 				self.x=self.max_x
 
 
-def set_direct(event,up,down,left,right):
+def set_direct(event,direct):
 
 	if event.type == pygame.KEYDOWN:
 		k=event.key
 		if k==pygame.K_UP:
-			up=1
+			direct[up]=1
 		elif k==pygame.K_DOWN:
-			down=1
+			direct[down]=1
 		elif k==pygame.K_LEFT:
-			left=1
+			direct[left]=1
 		elif k==pygame.K_RIGHT:
-			right=1
+			direct[right]=1
 					
 	if event.type == pygame.KEYUP:
 		k=event.key
 		if k==pygame.K_UP:
-			up=0
+			direct[up]=0
 		elif k==pygame.K_DOWN:
-			down=0
+			direct[down]=0
 		elif k==pygame.K_LEFT:
-			left=0
+			direct[left]=0
 		elif k==pygame.K_RIGHT:
-			right=0
+			direct[right]=0
 
-	return (up,down,left,right)
+	return direct
 
 
 
@@ -77,7 +84,6 @@ class controller(object):
 		object.__init__(self)
 		
 		self.ident=0
-		#self.worm=worm()
 		self.worm=[]
 		for i in range(4):
 			self.worm.append(worm())
@@ -90,13 +96,14 @@ class controller(object):
 
 		#incjalizacja i wczytanie mapy
 		map1=map()
-		map1.loadMap("map")
+		location=map1.loadMap("map")
 
+		#ustawienie pozycji wormow z pliku 
+		for i in range(4):
+			(self.worm[i].x,self.worm[i].y)=location[i]
 
-		up=0
-		down=0
-		left=0
-		right=0
+		direct=[0,0,0,0]
+		
 
 		client.init(port_ip)
 		val=None
@@ -111,7 +118,7 @@ class controller(object):
 		while True:
 			for event in pygame.event.get():
 
-				(up,down,left,right)=set_direct(event,up,down,left,right)
+				direct=set_direct(event,direct)
 
 				if event.type == QUIT:
 					client.close()
@@ -119,14 +126,8 @@ class controller(object):
 					sys.exit()
 
 
-			if up==1:
-				self.worm[self.ident].key_fun(pygame.K_UP)
-			if down==1:
-				self.worm[self.ident].key_fun(pygame.K_DOWN)
-			if left==1:
-				self.worm[self.ident].key_fun(pygame.K_LEFT)
-			if right==1:
-				self.worm[self.ident].key_fun(pygame.K_RIGHT)
+			self.worm[self.ident].key_fun(direct)
+			
 			
 			if up+down+left+right>0:
 				client.send((self.worm[self.ident].ident,self.worm[self.ident].x,self.worm[self.ident].y))
@@ -187,12 +188,13 @@ class controller_server(object):
 
 		#incjalizacja i wczytanie mapy
 		map1=map()
-		map1.loadMap("map")
+		location=map1.loadMap("map")
 
-		up=0
-		down=0
-		left=0
-		right=0
+		#ustawienie pozycji wormow z pliku 
+		for i in range(4):
+			(self.worm[i].x,self.worm[i].y)=location[i]
+
+		direct=[0,0,0,0]
 
 		server.init(port_ip)
 		
@@ -203,22 +205,16 @@ class controller_server(object):
 		while True:
 			for event in pygame.event.get():
 				
-				(up,down,left,right)=set_direct(event,up,down,left,right)
+				direct=set_direct(event,direct)
 
 
 				if event.type == QUIT:
 					server.close()
 					pygame.quit()
 					sys.exit()
-
-			if up==1:
-				self.worm[self.ident].key_fun(pygame.K_UP)
-			if down==1:
-				self.worm[self.ident].key_fun(pygame.K_DOWN)
-			if left==1:
-				self.worm[self.ident].key_fun(pygame.K_LEFT)
-			if right==1:
-				self.worm[self.ident].key_fun(pygame.K_RIGHT)
+			
+			self.worm[self.ident].key_fun(direct)
+			
 
 			if up+down+left+right>0:
 				for i in self.worm:
