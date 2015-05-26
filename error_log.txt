@@ -1,0 +1,15 @@
+Pojawił mi się błąd przy chodzeniu po mapie:
+
+Traceback (most recent call last):
+  File "main.py", line 62, in <module>
+    main()
+  File "main.py", line 54, in main
+    game(screen,port_ip,0)	
+  File "/home/ja/liero/game.py", line 270, in game
+    cont.loop(port_ip)
+  File "/home/ja/liero/game.py", line 242, in loop
+    (tr_x,tr_y) = map1.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y)
+  File "/home/ja/liero/map.py", line 106, in drawMap
+    if self.tab[r][s]==' ':
+IndexError: list index out of range
+
