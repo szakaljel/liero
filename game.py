@@ -15,6 +15,7 @@ up=0
 down=1
 left=2
 right=3
+space=4
 
 class worm(object):
 	def __init__(self):
@@ -23,6 +24,10 @@ class worm(object):
 		self.ident=0;
 		self.x=0
 		self.y=0
+		self.speed_x=0.0
+		self.speed_y=0.0
+		self.target_angle=0.0
+		self.target_speed=2.0
 		self.img=self.background=pygame.image.load("images/cat.png")
 		self.img=pygame.transform.scale(self.img, (40, 40))
 		self.img.fill((0,255,0))
@@ -35,17 +40,77 @@ class worm(object):
 
 	def draw(self,screen,tr_x,tr_y):
 		screen.blit(self.img,(self.x-tr_x-self.info.center[X],self.y-tr_y-self.info.center[Y]))
+		pos_x=self.x+math.cos(self.target_angle*math.pi/180.0)*self.info.radius*1.5;
+		pos_y=self.y+math.sin(self.target_angle*math.pi/180.0)*self.info.radius*1.5;
+		pygame.draw.circle(screen,(255,0,0),(int(pos_x-tr_x),int(pos_y-tr_y)),5,1)
 
-	def key_fun(self,direct,map=None):
+	def key_fun(self,direct,map):
 		
-		if direct[up]:
-			self.move(0,-5,map)
-		if direct[down]:
-			self.move(0,5,map)
+		#tlumienie w osi x
+		sup_x=0.2
+		#grawitacja
+		sup_y=0.5
+
+		
+
+		self.speed_y+=sup_y
+		if self.speed_y>5.0:
+			self.speed_y=5.0
+
+		#dolna krawedz
+		i=self.x
+		j=self.y
+		edge=[ [i-self.info.center[X],j+self.info.center[Y]] , [i,j+self.info.center[Y]] , [i+self.info.center[X],j+self.info.center[Y]] ]
+
+		touch=False
+		#mozliwe blendy indekow
+		for point in edge:
+			seg_x=int(round(point[X]/float(map.x)))
+			seg_y=int(round(point[Y]/float(map.y)))
+			if map.tab[seg_y][seg_x]!=' ':
+				#print abs(seg_y*map.y-point[Y])
+				if abs(seg_y*map.y-point[Y])<map.y/2:
+					touch=True
+		if touch:
+			wsp_x=0.5
+			if direct[space]:
+				self.speed_y=-10
+			
+		else:
+			sup_x=0.05
+			wsp_x=0.1
+
 		if direct[left]:
-			self.move(-5,0,map)
+			self.speed_x-=wsp_x
+			if self.speed_x<-5.0:
+				self.speed_x=-5.0
 		if direct[right]:
-			self.move(5,0,map)
+			self.speed_x+=wsp_x
+			if self.speed_x>5.0:
+				self.speed_x=5.0
+		
+
+		if self.speed_x>0:
+			if self.speed_x>sup_x:
+				self.speed_x-=sup_x
+			else:
+				self.speed_x=0.0
+		else:
+			if self.speed_x<-sup_x:
+				self.speed_x+=sup_x
+			else:
+				self.speed_x=0.0
+
+		if direct[up]:
+			self.target_angle+=self.target_speed
+			if self.target_angle>360.0:
+				self.target_angle=0.0
+		if direct[down]:
+			self.target_angle-=self.target_speed
+			if self.target_angle<0.0:
+				self.target_angle=360.0
+
+		self.move(int(round(self.speed_x)),int(round(self.speed_y)),map)
 
 	def move(self,x,y,map):
 		
@@ -76,7 +141,7 @@ class worm(object):
 		for i in range(self.x,temp_x+a,a):
 			for j in range(self.y,temp_y+b,b):
 				if a<0 :
-					#lewa
+					#lewa	
 					edge=[ [i-self.info.center[X],j-int(wsp*self.info.center[Y])] , [i-self.info.center[X],j] , [i-self.info.center[X],j+int(wsp*self.info.center[Y])] ]
 					git=True
 					for point in edge:
@@ -118,6 +183,8 @@ class worm(object):
 									git=False
 					if git:
 						accept_y=j
+					else:
+						self.speed_y/=1.2;
 				else:
 					#dol
 					edge=[ [i-int(wsp*self.info.center[X]),j+self.info.center[Y]] , [i,j+self.info.center[Y]] ,[i+int(wsp*self.info.center[X]),j+self.info.center[Y]]]
@@ -158,6 +225,8 @@ def set_direct(event,direct):
 			direct[left]=1
 		elif k==pygame.K_RIGHT:
 			direct[right]=1
+		elif k==pygame.K_SPACE:
+			direct[space]=1
 					
 	if event.type == pygame.KEYUP:
 		k=event.key
@@ -169,6 +238,8 @@ def set_direct(event,direct):
 			direct[left]=0
 		elif k==pygame.K_RIGHT:
 			direct[right]=0
+		elif k==pygame.K_SPACE:
+			direct[space]=0
 
 	return direct
 
@@ -198,7 +269,7 @@ class controller(object):
 		for i in range(4):
 			(self.worm[i].x,self.worm[i].y)=location[i]
 
-		direct=[0,0,0,0]
+		direct=[0,0,0,0,0]
 		
 
 		client.init(port_ip)
@@ -290,7 +361,7 @@ class controller_server(object):
 		for i in range(4):
 			(self.worm[i].x,self.worm[i].y)=location[i]
 
-		direct=[0,0,0,0]
+		direct=[0,0,0,0,0]
 
 		server.init(port_ip)
 		
