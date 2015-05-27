@@ -26,7 +26,7 @@ class map(object):
 		for i in range(4):
 			tmp=file.readline()
 			tab=tmp.split()
-			ret.append((int(tab[0])*self.x*re_size,int(tab[1])*self.y*re_size))
+			ret.append((int(tab[0])*self.x*re_size+self.x/2*re_size,int(tab[1])*self.y*re_size+self.y/2*re_size))
 
 		#petla wczytuje mape po lini przeksztalca 1 znak na re_size x re_size
 		while True:

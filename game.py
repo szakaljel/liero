@@ -9,7 +9,8 @@ import math
 from sprite import ImageInfo, Sprite
 from map import map
 
-
+X=0
+Y=1
 up=0
 down=1
 left=2
@@ -24,32 +25,126 @@ class worm(object):
 		self.y=0
 		self.img=self.background=pygame.image.load("images/cat.png")
 		self.img=pygame.transform.scale(self.img, (40, 40))
+		self.img.fill((0,255,0))
+		width=self.img.get_width()
+		height=self.img.get_height()
+		self.info=ImageInfo([width/2,height/2],[width,height],width/2)
 		self.max_x=800
 		self.max_y=600
 
 
 	def draw(self,screen,tr_x,tr_y):
-		screen.blit(self.img,(self.x-tr_x,self.y-tr_y))
+		screen.blit(self.img,(self.x-tr_x-self.info.center[X],self.y-tr_y-self.info.center[Y]))
 
 	def key_fun(self,direct,map=None):
 		
 		if direct[up]:
-			self.y-=10
-			if self.y<0:
-				self.y=0
+			self.move(0,-5,map)
 		if direct[down]:
-			self.y+=10
-			if self.y>self.max_y:
-				self.y=self.max_y
+			self.move(0,5,map)
 		if direct[left]:
-			self.x-=10
-			if self.x<0:
-				self.x=0
+			self.move(-5,0,map)
 		if direct[right]:
-			self.x+=10
-			if self.x>self.max_x:
-				self.x=self.max_x
+			self.move(5,0,map)
 
+	def move(self,x,y,map):
+		
+		#segmenty
+		temp_x=self.x+x
+		temp_y=self.y+y
+
+		accept_x=self.x
+		accept_y=self.y
+
+		#skok wartosci posrednich x
+		a=map.x/4
+
+		if temp_x>=self.x:
+			a=a
+		else:
+			a=-a
+
+		#skok wartosci posrednich y
+		b=map.y/4
+
+		if temp_y>=self.y:
+			b=b
+		else:
+			b=-b
+
+		wsp=0.5
+		for i in range(self.x,temp_x+a,a):
+			for j in range(self.y,temp_y+b,b):
+				if a<0 :
+					#lewa
+					edge=[ [i-self.info.center[X],j-int(wsp*self.info.center[Y])] , [i-self.info.center[X],j] , [i-self.info.center[X],j+int(wsp*self.info.center[Y])] ]
+					git=True
+					for point in edge:
+						seg_x=int(round(point[X]/float(map.x)))
+						seg_y=int(round(point[Y]/float(map.y)))
+						if seg_x>=0 and seg_y>=0 and seg_x<map.xlen and seg_y<map.ylen:
+							
+							if map.tab[seg_y][seg_x]!=' ':
+								if point[X]-(seg_x+1)*map.x<=-map.x/4:
+									git=False
+					if git:
+						accept_x=i
+				else:
+					#prawa
+					edge=[ [i+self.info.center[X],j-int(wsp*self.info.center[Y])] , [i+self.info.center[X],j] , [i+self.info.center[X],j+int(wsp*self.info.center[Y])] ]
+					git=True
+					for point in edge:
+						seg_x=int(round(point[X]/float(map.x)))
+						seg_y=int(round(point[Y]/float(map.y)))
+
+						if seg_x>=0 and seg_y>=0 and seg_x<map.xlen and seg_y<map.ylen:
+							
+							if map.tab[seg_y][seg_x-1]!=' ':
+								if point[X]-(seg_x+1)*map.x<=-map.x/4:
+									git=False
+					if git:
+						accept_x=i
+				if b<0 :
+					#gora
+					edge=[ [i-int(wsp*self.info.center[X]),j-self.info.center[Y]] , [i,j-self.info.center[Y]] , [i+int(wsp*self.info.center[X]),j-self.info.center[Y]] ]
+					git=True
+					for point in edge:
+						seg_x=int(round(point[X]/float(map.x)))
+						seg_y=int(round(point[Y]/float(map.y)))
+						if seg_x>=0 and seg_y>=0 and seg_x<map.xlen and seg_y<map.ylen:
+							
+							if map.tab[seg_y][seg_x]!=' ':
+								if point[Y]-(seg_y+1)*map.y<=-map.y/4:
+									git=False
+					if git:
+						accept_y=j
+				else:
+					#dol
+					edge=[ [i-int(wsp*self.info.center[X]),j+self.info.center[Y]] , [i,j+self.info.center[Y]] ,[i+int(wsp*self.info.center[X]),j+self.info.center[Y]]]
+					git=True
+					for point in edge:
+						seg_x=int(round(point[X]/float(map.x)))
+						seg_y=int(round(point[Y]/float(map.y)))
+						if seg_x>=0 and seg_y>=0 and seg_x<map.xlen and seg_y<map.ylen:
+							
+							if map.tab[seg_y-1][seg_x]!=' ':
+								if point[Y]-(seg_y+1)*map.y<=-map.y/4:
+									git=False
+					if git:
+						accept_y=j
+
+
+		self.x=accept_x
+		self.y=accept_y
+		#krance mapy
+		if self.y<0:
+				self.y=0
+		if self.y>self.max_y:
+				self.y=self.max_y
+		if self.x<0:
+				self.x=0
+		if self.x>self.max_x:
+				self.x=self.max_x
 
 def set_direct(event,direct):
 
@@ -98,6 +193,7 @@ class controller(object):
 		map1=map()
 		location=map1.loadMap("map")
 
+
 		#ustawienie pozycji wormow z pliku 
 		for i in range(4):
 			(self.worm[i].x,self.worm[i].y)=location[i]
@@ -126,7 +222,7 @@ class controller(object):
 					sys.exit()
 
 
-			self.worm[self.ident].key_fun(direct)
+			self.worm[self.ident].key_fun(direct,map1)
 			
 			
 			if up+down+left+right>0:
@@ -213,7 +309,7 @@ class controller_server(object):
 					pygame.quit()
 					sys.exit()
 			
-			self.worm[self.ident].key_fun(direct)
+			self.worm[self.ident].key_fun(direct,map1)
 			
 
 			if up+down+left+right>0:
