@@ -9,13 +9,19 @@ import math
 from sprite import ImageInfo, Sprite
 from map import map
 
+XY_SEND=0
+ANGLE_SEND=1
+CREATE_BULLET=2
+
 X=0
 Y=1
+
 up=0
 down=1
 left=2
 right=3
 space=4
+k_x=5
 
 class worm(object):
 	def __init__(self):
@@ -28,6 +34,7 @@ class worm(object):
 		self.speed_y=0.0
 		self.target_angle=0.0
 		self.target_speed=2.0
+		self.reload=15
 		self.img=self.background=pygame.image.load("images/cat.png")
 		self.img=pygame.transform.scale(self.img, (40, 40))
 		self.img.fill((0,255,0))
@@ -227,6 +234,8 @@ def set_direct(event,direct):
 			direct[right]=1
 		elif k==pygame.K_SPACE:
 			direct[space]=1
+		elif k==pygame.K_x:
+			direct[k_x]=1
 					
 	if event.type == pygame.KEYUP:
 		k=event.key
@@ -240,6 +249,8 @@ def set_direct(event,direct):
 			direct[right]=0
 		elif k==pygame.K_SPACE:
 			direct[space]=0
+		elif k==pygame.K_x:
+			direct[k_x]=0
 
 	return direct
 
@@ -269,7 +280,7 @@ class controller(object):
 		for i in range(4):
 			(self.worm[i].x,self.worm[i].y)=location[i]
 
-		direct=[0,0,0,0,0]
+		direct=[0,0,0,0,0,0]
 		
 
 		client.init(port_ip)
@@ -295,16 +306,26 @@ class controller(object):
 
 			self.worm[self.ident].key_fun(direct,map1)
 			
+			#wysylam pozycje i kat
+			client.send((4*XY_SEND+self.worm[self.ident].ident,self.worm[self.ident].x,self.worm[self.ident].y))
+			client.send((4*ANGLE_SEND+self.worm[self.ident].ident,int(self.worm[self.ident].target_angle),0))
 			
-			if up+down+left+right>0:
-				client.send((self.worm[self.ident].ident,self.worm[self.ident].x,self.worm[self.ident].y))
+			#pociski
+			if direct[k_x] and self.worm[self.ident].reload<=0:
+				self.worm[self.ident].reload=15
+				client.send((4*CREATE_BULLET+self.worm[self.ident].ident,1,int(14.22*1000)))
 
 			val=client.recv()
 			while val!=None:
 				for w in self.worm:
-					if val[0]==w.ident:
-						w.x=val[1]
-						w.y=val[2]
+					if val[0]%4==w.ident:
+						if val[0]/4==XY_SEND:
+							w.x=val[1]
+							w.y=val[2]
+						elif val[0]/4==ANGLE_SEND:
+							w.target_angle=float(val[1])
+						elif val[0]/4==CREATE_BULLET:
+							print "{} CREATE BULLET {} --> x_vel = {} y_vel = {}".format(val[0]%4,val[1],math.cos(w.target_angle*math.pi/180)*val[2]/1000.0,math.sin(w.target_angle*math.pi/180)*val[2]/1000.0)
 				val=client.recv()
 
 
@@ -314,6 +335,11 @@ class controller(object):
 			
 			for w in self.worm:
 				w.draw(self.screen,tr_x,tr_y)
+
+			#update reload
+			self.worm[self.ident].reload-=1
+			if self.worm[self.ident].reload<-1:
+				self.worm[self.ident].reload=-1
 
 			pygame.display.update()
 			fpsClock.tick(FPS)
@@ -361,7 +387,7 @@ class controller_server(object):
 		for i in range(4):
 			(self.worm[i].x,self.worm[i].y)=location[i]
 
-		direct=[0,0,0,0,0]
+		direct=[0,0,0,0,0,0]
 
 		server.init(port_ip)
 		
@@ -382,21 +408,37 @@ class controller_server(object):
 			
 			self.worm[self.ident].key_fun(direct,map1)
 			
-
-			if up+down+left+right>0:
+			#na przyciski rozsylem pozycje i kat
+			#if up+down+left+right>0:
+			for i in self.worm:
+				if i.ident!=0:
+					server.send((i.ident,(4*XY_SEND+self.worm[self.ident].ident,self.worm[self.ident].x,self.worm[self.ident].y)))
+					server.send((i.ident,(4*ANGLE_SEND+self.worm[self.ident].ident,int(self.worm[self.ident].target_angle),0)))
+					#pociski
+			if direct[k_x] and self.worm[self.ident].reload<=0:
+				self.worm[self.ident].reload=15
 				for i in self.worm:
 					if i.ident!=0:
-						server.send((i.ident,(self.worm[self.ident].ident,self.worm[self.ident].x,self.worm[self.ident].y)))
+						server.send((i.ident,(4*CREATE_BULLET+self.worm[self.ident].ident,1,int(14.22*1000))))
 
+			#otrzymywanie wiadomosci
 			val=server.recv()
 			while val!=None:
 				for w in self.worm:
-					if val[0]==w.ident:
-						w.x=val[1]
-						w.y=val[2]
-						for w2 in self.worm:
-							if w2.ident!=w.ident:
-								server.send((w2.ident,val))
+					if val[0]%4==w.ident:
+						if val[0]/4==XY_SEND:
+							w.x=val[1]
+							w.y=val[2]
+							for w2 in self.worm:
+								if w2.ident!=w.ident:
+									server.send((w2.ident,val))
+						elif val[0]/4==ANGLE_SEND:
+							w.target_angle=float(val[1])
+							for w2 in self.worm:
+								if w2.ident!=w.ident:
+									server.send((w2.ident,val))
+						elif val[0]/4==CREATE_BULLET:
+							print "{} CREATE BULLET {} --> x_vel = {} y_vel = {}".format(val[0]%4,val[1],math.cos(w.target_angle*math.pi/180)*val[2]/1000.0,math.sin(w.target_angle*math.pi/180)*val[2]/1000.0)
 
 				val=server.recv()
 
@@ -420,6 +462,10 @@ class controller_server(object):
 			    	# upadate zwraca True, jeżeli obiekt jest do usunięcia
 			    	self.sprites.remove(sprite)
 			    	
+			#update reload
+			self.worm[self.ident].reload-=1
+			if self.worm[self.ident].reload<-1:
+				self.worm[self.ident].reload=-1
 
 			pygame.display.update()
 			fpsClock.tick(FPS)
