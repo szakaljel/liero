@@ -84,8 +84,9 @@ class Sprite:
 		self.angle += self.angle_vel
 		self.pos[0] = self.pos[0] + self.vel[0]
 		self.pos[1] = self.pos[1] + self.vel[1]
-		if self.pos[0] <0 or self.pos[1] < 0:
-			return True
+		# jeżeli mapa będzie dopuszczać strzał poza swój obszar, tj. nie będzie miała ściany.
+		#if self.pos[0] <0 or self.pos[1] < 0 or self.pos[0] > map.xlen * map.x or self.pos[1] > map.ylen * map.y :
+		#	return True
 		if not self.animated:
 			seg_x=int(round(self.pos[0]/float(map.x)))
 			seg_y=int(round(self.pos[1]/float(map.y)))

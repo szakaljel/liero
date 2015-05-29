@@ -43,7 +43,6 @@ class worm(object):
 		self.img=self.background=pygame.image.load("images/cat.png")
 		self.img=pygame.transform.scale(self.img, (40, 40))
 		self.img.fill((0,255,0))
-		self.radius = 20
 		width=self.img.get_width()
 		height=self.img.get_height()
 		self.info=ImageInfo([width/2,height/2],[width,height],width/2)
@@ -54,7 +53,7 @@ class worm(object):
 		return (self.x,self.y)
 		
 	def get_radius(self):
-		return self.radius
+		return self.info.radius
 		
 	def get_missle_start(self):
 		return (self.x + 25*math.cos(self.target_angle*math.pi/180), self.y + 25*math.sin(self.target_angle*math.pi/180))
