@@ -378,12 +378,13 @@ class controller(object):
 			    
 			lst = set(self.sprites)
 			for sprite in lst:
-			    if sprite.update():
+			    if sprite.update(map1):
 			    	self.sprites.remove(sprite)
-			    	
+			    	self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, explosion_image, explosion_info))
+			    				    	
 			lst = set(self.explosions)
 			for expl in lst:
-			    if expl.update():
+			    if expl.update(map1):
 			    	self.explosions.remove(expl)			    	
 
 			#update reload
@@ -508,12 +509,13 @@ class controller_server(object):
 			    
 			lst = set(self.sprites)
 			for sprite in lst:
-			    if sprite.update():
+			    if sprite.update(map1):
 			    	self.sprites.remove(sprite)
+			    	self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, explosion_image, explosion_info))
 			    	
 			lst = set(self.explosions)
 			for expl in lst:
-			    if expl.update():
+			    if expl.update(map1):
 			    	self.explosions.remove(expl)
 			    	
 			#update reload

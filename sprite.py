@@ -80,12 +80,17 @@ class Sprite:
 	def collide(self,other_object):
 		return dist(other_object.get_position(),self.pos)<(self.radius+other_object.get_radius())
 		
-	def update(self):
+	def update(self, map):
 		self.angle += self.angle_vel
 		self.pos[0] = self.pos[0] + self.vel[0]
 		self.pos[1] = self.pos[1] + self.vel[1]
 		if self.pos[0] <0 or self.pos[1] < 0:
 			return True
+		if not self.animated:
+			seg_x=int(round(self.pos[0]/float(map.x)))
+			seg_y=int(round(self.pos[1]/float(map.y)))
+			if map.tab[seg_y][seg_x]!=' ':
+				return True
 		self.age+=1
 		return self.age>=self.lifespan
 		
