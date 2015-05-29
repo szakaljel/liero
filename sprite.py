@@ -2,6 +2,7 @@
 # -*- coding: utf-8-*-
 
 import pygame
+import math
 
 WIDTH = 800
 HEIGHT = 600
@@ -64,22 +65,17 @@ class Sprite:
 		self.age = 0
                
 	def draw(self, screen,tr_x,tr_y):
-		rect = pygame.transform.rotate(self.image, -self.angle)
 		if self.animated:
 			# wskazujemy który segment rysunku trzeba narysować wskazując prostokąt:
 			# new_rect  =     Rect (left, top, width, height)
 			new_rect = pygame.Rect( self.age*self.image_size[0], 0, self.image_size[0], self.image_size[1])
 			# u nas width i height to rozmiary pojedynczego segmentu, przesuwamy więc left w zależności od age
-			#screen.blit(self.image, (self.pos[0] - tr_x,self.pos[1] - tr_y),new_rect)
-			screen.blit(rect, (self.pos[0] - tr_x,self.pos[1] - tr_y),new_rect)
+			screen.blit(self.image, (self.pos[0] - tr_x,self.pos[1] - tr_y),new_rect)
+			#screen.blit(rect, (self.pos[0] - tr_x,self.pos[1] - tr_y),new_rect)
 		else:
-			#screen.blit(self.image, (self.pos[0] - tr_x,self.pos[1] - tr_y))
+			rect = pygame.transform.rotate(self.image, -self.angle)
 			screen.blit(rect, (self.pos[0] - tr_x,self.pos[1] - tr_y))
-			
-			#screen.blit(self.img,(self.x-tr_x-self.info.center[X],self.y-tr_y-self.info.center[Y]))
-			#pos_x=self.x+math.cos(self.target_angle*math.pi/180.0)*self.info.radius*1.5;
-			#pos_y=self.y+math.sin(self.target_angle*math.pi/180.0)*self.info.radius*1.5;
-			#pygame.draw.circle(screen,(255,0,0),(int(pos_x-tr_x),int(pos_y-tr_y)),5,1)			
+				
 
 
 	def collide(self,other_object):

@@ -43,12 +43,24 @@ class worm(object):
 		self.img=self.background=pygame.image.load("images/cat.png")
 		self.img=pygame.transform.scale(self.img, (40, 40))
 		self.img.fill((0,255,0))
+		self.radius = 20
 		width=self.img.get_width()
 		height=self.img.get_height()
 		self.info=ImageInfo([width/2,height/2],[width,height],width/2)
 		self.max_x=800
 		self.max_y=600
-
+		
+	def get_position(self):
+		return (self.x,self.y)
+		
+	def get_radius(self):
+		return self.radius
+		
+	def get_missle_start(self):
+		return (self.x + 25*math.sin(self.target_angle*math.pi/180), self.y + 25*math.cos(self.target_angle*math.pi/180))
+		
+	def get_missle_velocity(self):
+		return (math.cos(self.target_angle*math.pi/180)*14.22,math.sin(self.target_angle*math.pi/180)*14.22)
 
 	def draw(self,screen,tr_x,tr_y):
 		screen.blit(self.img,(self.x-tr_x-self.info.center[X],self.y-tr_y-self.info.center[Y]))
@@ -196,7 +208,7 @@ class worm(object):
 					else:
 						self.speed_y/=1.2;
 				else:
-					#dol
+					#doldef group_collide(sprite_set,other_object):
 					edge=[ [i-int(wsp*self.info.center[X]),j+self.info.center[Y]] , [i,j+self.info.center[Y]] ,[i+int(wsp*self.info.center[X]),j+self.info.center[Y]]]
 					git=True
 					for point in edge:
@@ -270,6 +282,16 @@ class controller(object):
 			self.worm[i].ident=i
 		self.screen=screen
 		self.sprites = set()
+		self.explosions = set()
+		
+	def sprites_collide(self,other_object):
+		collision=False
+		for sprite in set(self.sprites):
+			if sprite.collide(other_object):
+				self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, explosion_image, explosion_info))
+				self.sprites.remove(sprite)
+				collision=True
+		return collision
 
 	def loop(self,port_ip):
 		FPS = 30 # frames per second setting
@@ -318,8 +340,8 @@ class controller(object):
 			if direct[k_x] and self.worm[self.ident].reload<=0:
 				self.worm[self.ident].reload=15
 				client.send((4*CREATE_BULLET+self.worm[self.ident].ident,1,int(14.22*1000)))
-				missile_position = (self.worm[self.ident].x,self.worm[self.ident].y)
-				missile_velocity = (math.cos(self.worm[self.ident].target_angle*math.pi/180)*14.22,math.sin(self.worm[self.ident].target_angle*math.pi/180)*14.22)
+				missile_position = self.worm[self.ident].get_missle_start()
+				missile_velocity = self.worm[self.ident].get_missle_velocity()
 				self.sprites.add(Sprite(missile_position, missile_velocity, self.worm[self.ident].target_angle, 0, missile_image, missile_info))
 
 			val=client.recv()
@@ -332,8 +354,9 @@ class controller(object):
 						elif val[0]/4==ANGLE_SEND:
 							w.target_angle=float(val[1])
 						elif val[0]/4==CREATE_BULLET:
-							missile_position = (w.x,w.y)
-							missile_velocity = (math.cos(w.target_angle*math.pi/180)*val[2]/1000.0,math.sin(w.target_angle*math.pi/180)*val[2]/1000.0)
+							#missile_position = (w.x,w.y)
+							missile_position = w.get_missle_start()
+							missile_velocity = w.get_missle_velocity()
 							self.sprites.add(Sprite(missile_position, missile_velocity, w.target_angle, 0, missile_image, missile_info))
 				val=client.recv()
 
@@ -343,6 +366,8 @@ class controller(object):
 			(tr_x,tr_y) = map1.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y)
 			
 			for w in self.worm:
+				if self.sprites_collide(w):
+					print "worm", w.ident, "just got shot"
 				w.draw(self.screen,tr_x,tr_y)
 
 			for sprite in self.sprites:
@@ -352,6 +377,11 @@ class controller(object):
 			for sprite in lst:
 			    if sprite.update():
 			    	self.sprites.remove(sprite)
+			    	
+			lst = set(self.explosions)
+			for expl in lst:
+			    if expl.update():
+			    	self.explosions.remove(expl)			    	
 
 			#update reload
 			self.worm[self.ident].reload-=1
@@ -372,10 +402,16 @@ class controller_server(object):
 			self.worm[i].ident=i
 		self.screen=screen
 		self.sprites = set()
-
-		#explosion_position = (125,0)
-		#explosion_velocity = (0,0)
-		#self.sprites.add(Sprite(explosion_position, explosion_velocity, 0, 0, explosion_image, explosion_info))
+		self.explosions = set()
+		
+	def sprites_collide(self,other_object):
+		collision=False
+		for sprite in set(self.sprites):
+			if sprite.collide(other_object):
+				self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, explosion_image, explosion_info))
+				self.sprites.remove(sprite)
+				collision = True
+		return collision		
 
 	def loop(self,port_ip):
 		FPS = 30 # frames per second setting
@@ -420,8 +456,8 @@ class controller_server(object):
 					#pociski
 			if direct[k_x] and self.worm[self.ident].reload<=0:
 				self.worm[self.ident].reload=15
-				missile_position = (self.worm[self.ident].x,self.worm[self.ident].y)
-				missile_velocity = (math.cos(self.worm[self.ident].target_angle*math.pi/180)*14.22,math.sin(self.worm[self.ident].target_angle*math.pi/180)*14.22)
+				missile_position = self.worm[self.ident].get_missle_start()
+				missile_velocity = self.worm[self.ident].get_missle_velocity()
 				self.sprites.add(Sprite(missile_position, missile_velocity, self.worm[self.ident].target_angle, 0, missile_image, missile_info))			
 				for i in self.worm:
 					if i.ident!=0:
@@ -444,8 +480,8 @@ class controller_server(object):
 								if w2.ident!=w.ident:
 									server.send((w2.ident,val))
 						elif val[0]/4==CREATE_BULLET:
-							missile_position = (w.x + 10*math.sin(w.target_angle*math.pi/180) ,w.y + 10*math.cos(w.target_angle*math.pi/180))
-							missile_velocity = (math.cos(w.target_angle*math.pi/180)*val[2]/1000.0,math.sin(w.target_angle*math.pi/180)*val[2]/1000.0)
+							missile_position = w.get_missle_start()
+							missile_velocity = w.get_missle_velocity()
 							self.sprites.add(Sprite(missile_position, missile_velocity, w.target_angle, 0, missile_image, missile_info))
 							for w2 in self.worm:
 								if w2.ident!=w.ident:
@@ -457,6 +493,8 @@ class controller_server(object):
 			#odrysowanie mapy zwrocono wektor translacji
 			(tr_x,tr_y) = map1.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y)
 			for w in self.worm:
+				if self.sprites_collide(w):
+					print "worm", w.ident, "just got shot"			
 				w.draw(self.screen,tr_x,tr_y)
 				
 			for sprite in self.sprites:
@@ -466,6 +504,11 @@ class controller_server(object):
 			for sprite in lst:
 			    if sprite.update():
 			    	self.sprites.remove(sprite)
+			    	
+			lst = set(self.explosions)
+			for expl in lst:
+			    if expl.update():
+			    	self.explosions.remove(expl)
 			    	
 			#update reload
 			self.worm[self.ident].reload-=1

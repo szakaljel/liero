@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8-*-
+
 from menu import menu
 from form import form
 from game import game
@@ -22,6 +25,7 @@ def serwer_main(screen,screen_width,screen_height):
 	f=form()
 	f.set_screen_size(screen_width,screen_height)
 	f.set_inputs(list)
+	f.inputs[0].value = '12000'	
 	ret=f.loop(screen)
 	return ret[0]
 
@@ -31,6 +35,9 @@ def client_main(screen,screen_width,screen_height):
 	f=form()
 	f.set_screen_size(screen_width,screen_height)
 	f.set_inputs(list)
+	# do usunięcia w wersji RELASE
+	f.inputs[0].value = '12000'	
+	f.inputs[1].value = 'localhost'	
 	ret=f.loop(screen)
 	return (ret[0],ret[1])
 
