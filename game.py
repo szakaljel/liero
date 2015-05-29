@@ -57,7 +57,7 @@ class worm(object):
 		return self.radius
 		
 	def get_missle_start(self):
-		return (self.x + 25*math.sin(self.target_angle*math.pi/180), self.y + 25*math.cos(self.target_angle*math.pi/180))
+		return (self.x + 25*math.cos(self.target_angle*math.pi/180), self.y + 25*math.sin(self.target_angle*math.pi/180))
 		
 	def get_missle_velocity(self):
 		return (math.cos(self.target_angle*math.pi/180)*14.22,math.sin(self.target_angle*math.pi/180)*14.22)
