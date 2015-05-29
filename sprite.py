@@ -70,11 +70,10 @@ class Sprite:
 			# new_rect  =     Rect (left, top, width, height)
 			new_rect = pygame.Rect( self.age*self.image_size[0], 0, self.image_size[0], self.image_size[1])
 			# u nas width i height to rozmiary pojedynczego segmentu, przesuwamy więc left w zależności od age
-			screen.blit(self.image, (self.pos[0] - tr_x,self.pos[1] - tr_y),new_rect)
-			#screen.blit(rect, (self.pos[0] - tr_x,self.pos[1] - tr_y),new_rect)
+			screen.blit(self.image, (self.pos[0] - tr_x - self.image_center[0],self.pos[1] - tr_y - self.image_center[1]),new_rect)
 		else:
 			rect = pygame.transform.rotate(self.image, -self.angle)
-			screen.blit(rect, (self.pos[0] - tr_x,self.pos[1] - tr_y))
+			screen.blit(rect, (self.pos[0] - tr_x - self.image_center[0],self.pos[1] - tr_y - self.image_center[1]))
 				
 
 

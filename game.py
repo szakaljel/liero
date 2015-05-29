@@ -373,6 +373,9 @@ class controller(object):
 			for sprite in self.sprites:
 			    sprite.draw(self.screen,tr_x,tr_y)
 			    
+			for expl in self.explosions:
+				expl.draw(self.screen,tr_x,tr_y)			   
+			    
 			lst = set(self.sprites)
 			for sprite in lst:
 			    if sprite.update():
@@ -499,6 +502,9 @@ class controller_server(object):
 				
 			for sprite in self.sprites:
 			    sprite.draw(self.screen,tr_x,tr_y)
+			    
+			for expl in self.explosions:
+				expl.draw(self.screen,tr_x,tr_y)
 			    
 			lst = set(self.sprites)
 			for sprite in lst:
