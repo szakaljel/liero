@@ -63,23 +63,34 @@ class Sprite:
 		self.animated = info.get_animated()
 		self.age = 0
                
-	def draw(self, screen):
+	def draw(self, screen,tr_x,tr_y):
+		rect = pygame.transform.rotate(self.image, -self.angle)
 		if self.animated:
 			# wskazujemy który segment rysunku trzeba narysować wskazując prostokąt:
 			# new_rect  =     Rect (left, top, width, height)
 			new_rect = pygame.Rect( self.age*self.image_size[0], 0, self.image_size[0], self.image_size[1])
 			# u nas width i height to rozmiary pojedynczego segmentu, przesuwamy więc left w zależności od age
-			screen.blit(self.image, self.pos,new_rect)
+			#screen.blit(self.image, (self.pos[0] - tr_x,self.pos[1] - tr_y),new_rect)
+			screen.blit(rect, (self.pos[0] - tr_x,self.pos[1] - tr_y),new_rect)
 		else:
-			screen.blit(self.image, self.pos)
+			#screen.blit(self.image, (self.pos[0] - tr_x,self.pos[1] - tr_y))
+			screen.blit(rect, (self.pos[0] - tr_x,self.pos[1] - tr_y))
+			
+			#screen.blit(self.img,(self.x-tr_x-self.info.center[X],self.y-tr_y-self.info.center[Y]))
+			#pos_x=self.x+math.cos(self.target_angle*math.pi/180.0)*self.info.radius*1.5;
+			#pos_y=self.y+math.sin(self.target_angle*math.pi/180.0)*self.info.radius*1.5;
+			#pygame.draw.circle(screen,(255,0,0),(int(pos_x-tr_x),int(pos_y-tr_y)),5,1)			
+
 
 	def collide(self,other_object):
 		return dist(other_object.get_position(),self.pos)<(self.radius+other_object.get_radius())
 		
 	def update(self):
 		self.angle += self.angle_vel
-		self.pos[0] = (self.pos[0] + self.vel[0]) % WIDTH
-		self.pos[1] = (self.pos[1] + self.vel[1]) % HEIGHT
+		self.pos[0] = self.pos[0] + self.vel[0]
+		self.pos[1] = self.pos[1] + self.vel[1]
+		if self.pos[0] <0 or self.pos[1] < 0:
+			return True
 		self.age+=1
 		return self.age>=self.lifespan
 		

@@ -66,6 +66,7 @@ class form(object):
 		tick=0
 		FPS = 30 # frames per second setting
 		fpsClock = pygame.time.Clock()
+		self.focus=self.inputs[0]
 		while True:
 			l=len(self.inputs)
 			events=pygame.event.get()

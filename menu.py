@@ -110,7 +110,7 @@ class menu(object):
 	def loop(self,screen):
 		FPS = 30 # frames per second setting
 		fpsClock = pygame.time.Clock()
-
+		self.selected=self.elements[0]
 		while True:
 			self.draw(screen)
 			for event in pygame.event.get():
