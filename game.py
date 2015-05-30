@@ -3,6 +3,7 @@
 
 import pygame, sys
 from pygame.locals import *
+import random
 import client
 import server
 import math
@@ -29,6 +30,8 @@ explosion_info = ImageInfo([64, 64], [128, 128], 17, 24, True)
 explosion_image = pygame.image.load("images/explosion_orange.png")
 
 colours = ((0,255,255),(255,0,0),(255,0,255),(0,255,0))
+
+random.seed()
 
 class worm(object):
 	def __init__(self):
@@ -96,6 +99,15 @@ class worm(object):
 		pos_x=self.x+math.cos(self.target_angle*math.pi/180.0)*self.info.radius*1.5;
 		pos_y=self.y+math.sin(self.target_angle*math.pi/180.0)*self.info.radius*1.5;
 		pygame.draw.circle(screen,self.colour,(int(pos_x-tr_x),int(pos_y-tr_y)),5,1)
+		
+	def respawn(self,map):
+		while True:
+			x = random.randrange(map.xlen)
+			y = random.randrange(map.ylen)
+			if map.tab[y][x] == ' ':
+				self.x = x * map.x
+				self.y = y * map.y
+				return
 
 	def key_fun(self,direct,map):
 		
@@ -370,7 +382,6 @@ def set_direct(event,direct):
 	return direct
 
 
-
 class controller(object):
 	def __init__(self,screen):
 		object.__init__(self)
@@ -473,6 +484,9 @@ class controller(object):
 			for w in self.worm:
 				if self.sprites_collide(w):
 					print "worm", w.ident, "just got shot"
+					if w.ident == self.ident:
+						w.respawn(self.map)
+						self.communicate_keyboard() # wyślij informacje o nowej pozycji
 				w.draw(self.screen,tr_x,tr_y)
 				
 			for sprite in self.sprites:
@@ -503,7 +517,7 @@ class controller_client(controller):
 		client.send((4*ANGLE_SEND+self.worm[self.ident].ident,int(self.worm[self.ident].target_angle),0))
 		
 		if self.did_shoot:
-			client.send((4*CREATE_BULLET+self.worm[self.ident].ident,1,int(14.22*1000)))
+			client.send((4*CREATE_BULLET+self.worm[self.ident].ident,1,0))
 			
 	def communicate_received(self, val, ident):
 		pass # klient nie rozsyla
@@ -523,7 +537,7 @@ class controller_server(controller):
 			
 		if self.did_shoot:
 			for i in self.worm[1:]:
-				server.send((i.ident,(4*CREATE_BULLET+self.worm[self.ident].ident,1,int(14.22*1000))))
+				server.send((i.ident,(4*CREATE_BULLET+self.worm[self.ident].ident,1,0)))
 				
 	def communicate_received(self, val, ident):
 		for w in self.worm:
