@@ -84,15 +84,19 @@ class Sprite:
 		self.angle += self.angle_vel
 		self.pos[0] = self.pos[0] + self.vel[0]
 		self.pos[1] = self.pos[1] + self.vel[1]
+		"""
+		# strzały rozwalają planszę!
 		# jeżeli mapa będzie dopuszczać strzał poza swój obszar, tj. nie będzie miała ściany.
 		if self.pos[0] <0 or self.pos[1] < 0 or self.pos[0] > map.xlen * map.x or self.pos[1] > map.ylen * map.y :
 			return True
-			
-		# strzały rozwalają planszę!
+		"""
+
 		if not self.animated:
 			seg_x=int(round(self.pos[0]/float(map.x)))
 			seg_y=int(round(self.pos[1]/float(map.y)))
 			if map.tab[seg_y][seg_x] != ' ':
+				"""
+				# strzały rozwalają planszę!
 				map.tab[seg_y][seg_x] = ' '
 				if seg_y + 1 < map.ylen:
 					map.tab[seg_y + 1][seg_x] = ' '
@@ -102,6 +106,7 @@ class Sprite:
 					map.tab[seg_y][seg_x - 1] = ' '
 				if seg_y > 0:
 					map.tab[seg_y - 1][seg_x] = ' '
+				"""
 				return True
 		self.age+=1
 		return self.age>=self.lifespan

@@ -374,7 +374,6 @@ def set_direct(event,direct):
 class controller(object):
 	def __init__(self,screen):
 		object.__init__(self)
-		
 		self.ident=0
 		self.worm=[]
 		for i in range(4):
@@ -384,6 +383,13 @@ class controller(object):
 		self.screen=screen
 		self.sprites = set()
 		self.explosions = set()
+		self.FPS = 30
+		self.map = map()
+		location=self.map.loadMap("map")
+		#ustawienie pozycji wormow z pliku 
+		for i in range(4):
+			(self.worm[i].x,self.worm[i].y)=location[i]		
+		self.did_shoot = False
 		
 	def sprites_collide(self,other_object):
 		collision=False
@@ -393,216 +399,80 @@ class controller(object):
 				self.sprites.remove(sprite)
 				collision=True
 		return collision
-
+		
 	def loop(self,port_ip):
-		FPS = 30 # frames per second setting
+		self.loop_init(port_ip)
 		fpsClock = pygame.time.Clock()
 
-		#incjalizacja i wczytanie mapy
-		map1=map()
-		location=map1.loadMap("map")
-
-
-		#ustawienie pozycji wormow z pliku 
-		for i in range(4):
-			(self.worm[i].x,self.worm[i].y)=location[i]
-
 		direct=[0,0,0,0,0,0]
-		
-
-		client.init(port_ip)
-		val=None
-		while val==None:
-			val=client.recv();
-		self.ident=val[0];
-		
+				
 		#modyfikacja granic poruszania worma
-		self.worm[self.ident].max_x=map1.xlen*map1.x
-		self.worm[self.ident].max_y=map1.ylen*map1.y
-
-		while True:
-			for event in pygame.event.get():
-
-				direct=set_direct(event,direct)
-
-				if event.type == QUIT:
-					client.close()
-					pygame.quit()
-					sys.exit()
-
-
-			self.worm[self.ident].key_fun(direct,map1)
-			
-			#wysylam pozycje i kat
-			client.send((4*XY_SEND+self.worm[self.ident].ident,self.worm[self.ident].x,self.worm[self.ident].y))
-			client.send((4*ANGLE_SEND+self.worm[self.ident].ident,int(self.worm[self.ident].target_angle),0))
-			
-			#pociski
-			if direct[k_x] and self.worm[self.ident].reload<=0:
-				self.worm[self.ident].reload=15
-				client.send((4*CREATE_BULLET+self.worm[self.ident].ident,1,int(14.22*1000)))
-				missile_position = self.worm[self.ident].get_missle_start()
-				missile_velocity = self.worm[self.ident].get_missle_velocity()
-				self.sprites.add(Sprite(missile_position, missile_velocity, self.worm[self.ident].target_angle, 0, missile_image, missile_info))
-
-			val=client.recv()
-			while val!=None:
-				for w in self.worm:
-					if val[0]%4==w.ident:
-						if val[0]/4==XY_SEND:
-							w.x=val[1]
-							w.y=val[2]
-						elif val[0]/4==ANGLE_SEND:
-							w.target_angle=float(val[1])
-							w.update_image()
-						elif val[0]/4==CREATE_BULLET:
-							#missile_position = (w.x,w.y)
-							missile_position = w.get_missle_start()
-							missile_velocity = w.get_missle_velocity()
-							self.sprites.add(Sprite(missile_position, missile_velocity, w.target_angle, 0, missile_image, missile_info))
-				val=client.recv()
-
-
-			self.screen.fill((255,255,255))
-			#odrysowanie mapy zwrocono wektor translacji
-			(tr_x,tr_y) = map1.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y)
-			
-			for w in self.worm:
-				if self.sprites_collide(w):
-					print "worm", w.ident, "just got shot"
-				w.draw(self.screen,tr_x,tr_y)
-
-			for sprite in self.sprites:
-			    sprite.draw(self.screen,tr_x,tr_y)
-			    
-			for expl in self.explosions:
-				expl.draw(self.screen,tr_x,tr_y)			   
-			    
-			lst = set(self.sprites)
-			for sprite in lst:
-			    if sprite.update(map1):
-			    	self.sprites.remove(sprite)
-			    	self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, explosion_image, explosion_info))
-			    				    	
-			lst = set(self.explosions)
-			for expl in lst:
-			    if expl.update(map1):
-			    	self.explosions.remove(expl)			    	
-
-			#update reloadw.update_image()
-			self.worm[self.ident].reload-=1
-			if self.worm[self.ident].reload<-1:
-				self.worm[self.ident].reload=-1
-
-			pygame.display.update()
-			fpsClock.tick(FPS)
-
-class controller_server(object):
-	
-	def __init__(self,screen):
-		object.__init__(self)
-		self.ident=0
-		self.worm=[]
-		for i in range(4):
-			self.worm.append(worm())
-			self.worm[i].ident = i
-			self.worm[i].colour = colours[i]			
-		self.screen=screen
-		self.sprites = set()
-		self.explosions = set()
+		self.worm[self.ident].max_x=self.map.xlen*self.map.x
+		self.worm[self.ident].max_y=self.map.ylen*self.map.y
 		
-	def sprites_collide(self,other_object):
-		collision=False
-		for sprite in set(self.sprites):
-			if sprite.collide(other_object):
-				self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, explosion_image, explosion_info))
-				self.sprites.remove(sprite)
-				collision = True
-		return collision		
-
-	def loop(self,port_ip):
-		FPS = 30 # frames per second setting
-		fpsClock = pygame.time.Clock()
-
-		#incjalizacja i wczytanie mapy
-		map1=map()
-		location=map1.loadMap("map")
-
-		#ustawienie pozycji wormow z pliku 
-		for i in range(4):
-			(self.worm[i].x,self.worm[i].y)=location[i]
-
-		direct=[0,0,0,0,0,0]
-
-		server.init(port_ip)
-		
-		#modyfikacja granic poruszania worma
-		self.worm[self.ident].max_x=map1.xlen*map1.x
-		self.worm[self.ident].max_y=map1.ylen*map1.y
-
 		while True:
 			for event in pygame.event.get():
 				
-				direct=set_direct(event,direct)
-
+				direct = set_direct(event,direct)
 
 				if event.type == QUIT:
 					server.close()
 					pygame.quit()
 					sys.exit()
 			
-			self.worm[self.ident].key_fun(direct,map1)
-			
-			
-			#na przyciski rozsylem pozycje i kat
-			#if up+down+left+right>0:
-			for i in self.worm:
-				if i.ident!=0:
-					server.send((i.ident,(4*XY_SEND+self.worm[self.ident].ident,self.worm[self.ident].x,self.worm[self.ident].y)))
-					server.send((i.ident,(4*ANGLE_SEND+self.worm[self.ident].ident,int(self.worm[self.ident].target_angle),0)))
-					#pociski
+			self.worm[self.ident].key_fun(direct,self.map)
+					
 			if direct[k_x] and self.worm[self.ident].reload<=0:
+				self.did_shoot = True
 				self.worm[self.ident].reload=15
 				missile_position = self.worm[self.ident].get_missle_start()
 				missile_velocity = self.worm[self.ident].get_missle_velocity()
-				self.sprites.add(Sprite(missile_position, missile_velocity, self.worm[self.ident].target_angle, 0, missile_image, missile_info))			
-				for i in self.worm:
-					if i.ident!=0:
-						server.send((i.ident,(4*CREATE_BULLET+self.worm[self.ident].ident,1,int(14.22*1000))))
-
-			#otrzymywanie wiadomosci
-			val=server.recv()
-			while val!=None:
-				for w in self.worm:
-					if val[0]%4==w.ident:
-						if val[0]/4==XY_SEND:
-							w.x=val[1]
-							w.y=val[2]
-							for w2 in self.worm:
-								if w2.ident!=w.ident:
-									server.send((w2.ident,val))
-						elif val[0]/4==ANGLE_SEND:
-							w.target_angle=float(val[1])
-							w.update_image()
-							for w2 in self.worm:
-								if w2.ident!=w.ident:
-									server.send((w2.ident,val))
-						elif val[0]/4==CREATE_BULLET:
-							missile_position = w.get_missle_start()
-							missile_velocity = w.get_missle_velocity()
-							self.sprites.add(Sprite(missile_position, missile_velocity, w.target_angle, 0, missile_image, missile_info))
-							for w2 in self.worm:
-								if w2.ident!=w.ident:
-									server.send((w2.ident,val))							
-
-				val=server.recv()
-
+				self.sprites.add(Sprite(missile_position, missile_velocity, self.worm[self.ident].target_angle, 0, missile_image, missile_info))		
+				
+			self.communicate_keyboard()
+			self.did_shoot = False
+			
+			#otrzymywanie wiadomosci			
+			val = self.receiver_function()
+			ident = None
+			action = None
+			while val != None:
+				ident = val[0] % 4
+				action = val[0] / 4
+				w = self.worm[ident]
+				if action == XY_SEND:
+					w.x = val[1]
+					w.y = val[2]
+				elif action == ANGLE_SEND:
+					w.target_angle=float(val[1])
+					w.update_image()
+				elif action == CREATE_BULLET:
+					missile_position = w.get_missle_start()
+					missile_velocity = w.get_missle_velocity()
+					self.sprites.add(Sprite(missile_position, missile_velocity, w.target_angle, 0, missile_image, missile_info))
+				
+				self.communicate_received(val,ident)
+					
+				val = self.receiver_function()
+				
+			lst = set(self.sprites)
+			for sprite in lst:
+			    if sprite.update(self.map):
+			    	self.sprites.remove(sprite)
+			    	self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, explosion_image, explosion_info))
+			    				    	
+			lst = set(self.explosions)
+			for expl in lst:
+			    if expl.update(self.map):
+			    	self.explosions.remove(expl)
+			    	
+			self.worm[self.ident].reload -= 1
+			
 			self.screen.fill((255,255,255))
-			#odrysowanie mapy zwrocono wektor translacji
-			(tr_x,tr_y) = map1.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y)
+			(tr_x,tr_y) = self.map.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y)
 			for w in self.worm:
 				if self.sprites_collide(w):
-					print "worm", w.ident, "just got shot"			
+					print "worm", w.ident, "just got shot"
 				w.draw(self.screen,tr_x,tr_y)
 				
 			for sprite in self.sprites:
@@ -610,29 +480,59 @@ class controller_server(object):
 			    
 			for expl in self.explosions:
 				expl.draw(self.screen,tr_x,tr_y)
-			    
-			lst = set(self.sprites)
-			for sprite in lst:
-			    if sprite.update(map1):
-			    	self.sprites.remove(sprite)
-			    	self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, explosion_image, explosion_info))
-			    	
-			lst = set(self.explosions)
-			for expl in lst:
-			    if expl.update(map1):
-			    	self.explosions.remove(expl)
-			    	
-			#update reload
-			self.worm[self.ident].reload-=1
-			if self.worm[self.ident].reload<-1:
-				self.worm[self.ident].reload=-1
-
+				
 			pygame.display.update()
-			fpsClock.tick(FPS)
+			fpsClock.tick(self.FPS)		
+			
+		
+class controller_client(controller):
+	def __init__(self,screen):
+		super(controller_client,self).__init__(screen)
+		self.receiver_function = client.recv
+
+	def loop_init(self,port_ip):
+		client.init(port_ip)
+		val=None
+		while val==None:
+			val=client.recv()
+		self.ident=val[0]
+	
+	def communicate_keyboard(self):
+			#wysylam pozycje i kat
+		client.send((4*XY_SEND+self.worm[self.ident].ident,self.worm[self.ident].x,self.worm[self.ident].y))
+		client.send((4*ANGLE_SEND+self.worm[self.ident].ident,int(self.worm[self.ident].target_angle),0))
+		
+		if self.did_shoot:
+			client.send((4*CREATE_BULLET+self.worm[self.ident].ident,1,int(14.22*1000)))
+			
+	def communicate_received(self, val, ident):
+		pass # klient nie rozsyla
+
+class controller_server(controller):
+	def __init__(self,screen):
+		super(controller_server,self).__init__(screen)
+		self.receiver_function = server.recv
+
+	def loop_init(self,port_ip):
+		server.init(port_ip)
+		
+	def communicate_keyboard(self):
+		for i in self.worm[1:]:
+			server.send((i.ident,(4*XY_SEND+self.worm[self.ident].ident,self.worm[self.ident].x,self.worm[self.ident].y)))
+			server.send((i.ident,(4*ANGLE_SEND+self.worm[self.ident].ident,int(self.worm[self.ident].target_angle),0)))
+			
+		if self.did_shoot:
+			for i in self.worm[1:]:
+				server.send((i.ident,(4*CREATE_BULLET+self.worm[self.ident].ident,1,int(14.22*1000))))
+				
+	def communicate_received(self, val, ident):
+		for w in self.worm:
+			if w.ident != ident:
+				server.send((w.ident,val))		
 
 def game(screen,port_ip,SorC):
 	if SorC==1:
-		cont=controller(screen)
+		cont=controller_client(screen)
 		cont.loop(port_ip)
 	else:
 		cont=controller_server(screen)
