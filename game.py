@@ -316,6 +316,24 @@ class worm(object):
 				self.x=0
 		if self.x>self.max_x:
 				self.x=self.max_x
+				
+	def update_image(self):
+		if self.target_angle >= 330 or self.target_angle < 30:
+			self.img = self.img_norm_r
+		elif self.target_angle < 90:
+			self.img = self.img_down_r
+		elif self.target_angle < 150:
+			self.img = self.img_down
+		elif self.target_angle < 210:
+			self.img = self.img_norm
+		elif self.target_angle < 240:
+			self.img = self.img_up
+		elif self.target_angle < 270:
+			self.img = self.img_top
+		elif self.target_angle < 300:
+			self.img = self.img_top_r
+		else:
+			self.img = self.img_up_r
 
 def set_direct(event,direct):
 
@@ -436,6 +454,7 @@ class controller(object):
 							w.y=val[2]
 						elif val[0]/4==ANGLE_SEND:
 							w.target_angle=float(val[1])
+							w.update_image()
 						elif val[0]/4==CREATE_BULLET:
 							#missile_position = (w.x,w.y)
 							missile_position = w.get_missle_start()
@@ -470,7 +489,7 @@ class controller(object):
 			    if expl.update(map1):
 			    	self.explosions.remove(expl)			    	
 
-			#update reload
+			#update reloadw.update_image()
 			self.worm[self.ident].reload-=1
 			if self.worm[self.ident].reload<-1:
 				self.worm[self.ident].reload=-1
@@ -564,6 +583,7 @@ class controller_server(object):
 									server.send((w2.ident,val))
 						elif val[0]/4==ANGLE_SEND:
 							w.target_angle=float(val[1])
+							w.update_image()
 							for w2 in self.worm:
 								if w2.ident!=w.ident:
 									server.send((w2.ident,val))
