@@ -28,6 +28,8 @@ missile_image = pygame.image.load("images/shot3.png")
 explosion_info = ImageInfo([64, 64], [128, 128], 17, 24, True)
 explosion_image = pygame.image.load("images/explosion_orange.png")
 
+colours = ((0,255,255),(255,0,0),(255,0,255),(0,255,0))
+
 class worm(object):
 	def __init__(self):
 		object.__init__(self)
@@ -37,17 +39,45 @@ class worm(object):
 		self.y=0
 		self.speed_x=0.0
 		self.speed_y=0.0
-		self.target_angle=0.0
-		self.target_speed=2.0
+		self.target_angle=0
+		self.target_speed=2
 		self.reload=15
-		self.img=self.background=pygame.image.load("images/cat.png")
-		self.img=pygame.transform.scale(self.img, (40, 40))
-		self.img.fill((0,255,0))
+		
+		original_image = pygame.image.load("images/Catz-BlackCat3.png").convert_alpha()
+		
+		# konstrukcja obrazków
+		rect_norm = pygame.Rect( 680, 249, 40, 50)
+		self.img_norm = pygame.Surface((40,50),flags=pygame.SRCALPHA)
+		self.img_norm.blit(original_image, (0,0),rect_norm)
+		self.img_norm = pygame.transform.scale(self.img_norm, (40, 40)) # lewy
+		self.img_norm_r = pygame.transform.flip(self.img_norm, True, False) # prawy
+
+		rect_down = pygame.Rect( 224, 405, 40, 50)
+		self.img_down = pygame.Surface((40,50),flags=pygame.SRCALPHA)
+		self.img_down.blit(original_image, (0,0),rect_down)
+		self.img_down = pygame.transform.scale(self.img_down, (40, 40))
+		self.img_down_r = pygame.transform.flip(self.img_down, True, False)	
+
+		rect_up = pygame.Rect( 245, 456, 30, 45)
+		self.img_up = pygame.Surface((40,50),flags=pygame.SRCALPHA)
+		self.img_up.blit(original_image, (0,0),rect_up)
+		self.img_up = pygame.transform.scale(self.img_up, (40, 40))		
+		self.img_up_r = pygame.transform.flip(self.img_up, True, False)
+
+		rect_top = pygame.Rect( 370, 456, 30, 45)
+		self.img_top = pygame.Surface((40,50),flags=pygame.SRCALPHA)
+		self.img_top.blit(original_image, (0,0),rect_top)
+		self.img_top = pygame.transform.scale(self.img_top, (40, 40))		
+		self.img_top_r = pygame.transform.flip(self.img_top, True, False)
+
+		self.img = self.img_norm_r
+		self.direction = right # zwrot, przybiera wartości left lub right
 		width=self.img.get_width()
 		height=self.img.get_height()
 		self.info=ImageInfo([width/2,height/2],[width,height],width/2)
 		self.max_x=800
 		self.max_y=600
+		self.colour = colours[0]
 		
 	def get_position(self):
 		return (self.x,self.y)
@@ -65,7 +95,7 @@ class worm(object):
 		screen.blit(self.img,(self.x-tr_x-self.info.center[X],self.y-tr_y-self.info.center[Y]))
 		pos_x=self.x+math.cos(self.target_angle*math.pi/180.0)*self.info.radius*1.5;
 		pos_y=self.y+math.sin(self.target_angle*math.pi/180.0)*self.info.radius*1.5;
-		pygame.draw.circle(screen,(255,0,0),(int(pos_x-tr_x),int(pos_y-tr_y)),5,1)
+		pygame.draw.circle(screen,self.colour,(int(pos_x-tr_x),int(pos_y-tr_y)),5,1)
 
 	def key_fun(self,direct,map):
 		
@@ -109,8 +139,8 @@ class worm(object):
 			self.speed_x+=wsp_x
 			if self.speed_x>5.0:
 				self.speed_x=5.0
-		
-
+				
+				
 		if self.speed_x>0:
 			if self.speed_x>sup_x:
 				self.speed_x-=sup_x
@@ -120,16 +150,69 @@ class worm(object):
 			if self.speed_x<-sup_x:
 				self.speed_x+=sup_x
 			else:
-				self.speed_x=0.0
+				self.speed_x=0.0				
+			
+		target_angle_changed = False
+		# jezeli wcisnieta jest tylko jedna strzalka w bok, ustawiamy kierunek i zmieniamy kąt 
+		if direct[left] + direct[right] == 1:
+			old_direction = self.direction
+			self.direction = left if direct[left] else right
+			if self.direction != old_direction:
+				target_angle_changed = True
+				if self.target_angle <= 180:
+					self.target_angle = 179 - self.target_angle # 179 --> patrz poniżej
+				else:
+					self.target_angle = 539 - self.target_angle # 179 i 539 zamiast 180 i 540 mam dlatego,
+																# że 89 przynależy na prawo a 90 na lewo
+																# a 269 przynależy na lewo, a 270 na prawo
+		
 
+		# zmianna kąta na strzałki góra-dół zależy od zwrotu kota
 		if direct[up]:
-			self.target_angle+=self.target_speed
-			if self.target_angle>360.0:
-				self.target_angle=0.0
+			target_angle_changed = True
+			if self.direction == left:
+				self.target_angle+=self.target_speed
+				if self.target_angle >= 270:
+					self.target_angle = 269
+			else:
+				self.target_angle -= self.target_speed
+				if self.target_angle < 0:
+					self.target_angle += 360
+				elif self.target_angle < 270 and self.target_angle > 180:
+					self.target_angle = 270
+				
 		if direct[down]:
-			self.target_angle-=self.target_speed
-			if self.target_angle<0.0:
-				self.target_angle=360.0
+			target_angle_changed = True
+			if self.direction == left:
+				self.target_angle -= self.target_speed
+				if self.target_angle<90:
+					self.target_angle=90
+			else:
+				self.target_angle += self.target_speed
+				if self.target_angle >= 90 and self.target_angle < 180:
+					self.target_angle = 89	
+				elif self.target_angle >=360:
+					self.target_angle -= 360
+				
+		# ustawienie aktualnego obrazka (jeżeli trzeba)
+		if target_angle_changed:
+			if self.target_angle >= 330 or self.target_angle < 30:
+				self.img = self.img_norm_r
+			elif self.target_angle < 90:
+				self.img = self.img_down_r
+			elif self.target_angle < 150:
+				self.img = self.img_down
+			elif self.target_angle < 210:
+				self.img = self.img_norm
+			elif self.target_angle < 240:
+				self.img = self.img_up
+			elif self.target_angle < 270:
+				self.img = self.img_top
+			elif self.target_angle < 300:
+				self.img = self.img_top_r
+			else:
+				self.img = self.img_up_r
+			
 
 		self.move(int(round(self.speed_x)),int(round(self.speed_y)),map)
 
@@ -278,7 +361,8 @@ class controller(object):
 		self.worm=[]
 		for i in range(4):
 			self.worm.append(worm())
-			self.worm[i].ident=i
+			self.worm[i].ident = i
+			self.worm[i].colour = colours[i]
 		self.screen=screen
 		self.sprites = set()
 		self.explosions = set()
@@ -402,7 +486,8 @@ class controller_server(object):
 		self.worm=[]
 		for i in range(4):
 			self.worm.append(worm())
-			self.worm[i].ident=i
+			self.worm[i].ident = i
+			self.worm[i].colour = colours[i]			
 		self.screen=screen
 		self.sprites = set()
 		self.explosions = set()

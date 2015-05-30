@@ -91,6 +91,7 @@ class Sprite:
 			seg_x=int(round(self.pos[0]/float(map.x)))
 			seg_y=int(round(self.pos[1]/float(map.y)))
 			if map.tab[seg_y][seg_x]!=' ':
+				#map.tab[seg_y][seg_x] =' '
 				return True
 		self.age+=1
 		return self.age>=self.lifespan
