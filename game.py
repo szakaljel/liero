@@ -81,6 +81,7 @@ class worm(object):
 		self.max_x=800
 		self.max_y=600
 		self.colour = colours[0]
+		self.score = 0
 		
 	def get_position(self):
 		return (self.x,self.y)
@@ -391,7 +392,7 @@ class controller(object):
 			self.worm.append(worm())
 			self.worm[i].ident = i
 			self.worm[i].colour = colours[i]
-		self.screen=screen
+		self.screen = screen
 		self.sprites = set()
 		self.explosions = set()
 		self.FPS = 30
@@ -401,13 +402,21 @@ class controller(object):
 		for i in range(4):
 			(self.worm[i].x,self.worm[i].y)=location[i]		
 		self.did_shoot = False
+		self.font = pygame.font.SysFont("monospace", 20)
+
+	def print_scores(self):
+		label = None
+		for index, worm in enumerate(self.worm):
+			label = self.font.render("worm " + str(index) + " : " + str(worm.score), 1, colours[index])
+			self.screen.blit(label, (20, 400 + 30*index))
 		
 	def sprites_collide(self,other_object):
 		collision=False
 		for sprite in set(self.sprites):
 			if sprite.collide(other_object):
-				self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, explosion_image, explosion_info))
+				self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, 0, explosion_image, explosion_info))
 				self.sprites.remove(sprite)
+				self.worm[sprite.owner].score += 1
 				collision=True
 		return collision
 		
@@ -438,7 +447,7 @@ class controller(object):
 				self.worm[self.ident].reload=15
 				missile_position = self.worm[self.ident].get_missle_start()
 				missile_velocity = self.worm[self.ident].get_missle_velocity()
-				self.sprites.add(Sprite(missile_position, missile_velocity, self.worm[self.ident].target_angle, 0, missile_image, missile_info))		
+				self.sprites.add(Sprite(missile_position, missile_velocity, self.ident, self.worm[self.ident].target_angle, 0, missile_image, missile_info))		
 				
 			self.communicate_keyboard()
 			self.did_shoot = False
@@ -460,7 +469,7 @@ class controller(object):
 				elif action == CREATE_BULLET:
 					missile_position = w.get_missle_start()
 					missile_velocity = w.get_missle_velocity()
-					self.sprites.add(Sprite(missile_position, missile_velocity, w.target_angle, 0, missile_image, missile_info))
+					self.sprites.add(Sprite(missile_position, missile_velocity, ident, w.target_angle, 0, missile_image, missile_info))
 				
 				self.communicate_received(val,ident)
 					
@@ -470,7 +479,7 @@ class controller(object):
 			for sprite in lst:
 			    if sprite.update(self.map):
 			    	self.sprites.remove(sprite)
-			    	self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, explosion_image, explosion_info))
+			    	self.explosions.add(Sprite(sprite.get_position(), (0,0), 0, 0, 0, explosion_image, explosion_info))
 			    				    	
 			lst = set(self.explosions)
 			for expl in lst:
@@ -482,8 +491,7 @@ class controller(object):
 			self.screen.fill((255,255,255))
 			(tr_x,tr_y) = self.map.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y)
 			for w in self.worm:
-				if self.sprites_collide(w):
-					print "worm", w.ident, "just got shot"
+				if self.sprites_collide(w): # kolizja update'uje wynik tego, co wystrzelił pocisk
 					if w.ident == self.ident:
 						w.respawn(self.map)
 						self.communicate_keyboard() # wyślij informacje o nowej pozycji
@@ -494,6 +502,8 @@ class controller(object):
 			    
 			for expl in self.explosions:
 				expl.draw(self.screen,tr_x,tr_y)
+				
+			self.print_scores()	
 				
 			pygame.display.update()
 			fpsClock.tick(self.FPS)		

@@ -51,7 +51,7 @@ class Sprite:
 	  Na razie kąt i prędkość kątowa nie są wykorzystywane
 	- czas życia: służy do usuwania starych obiektów i do taktowania animacji (patrz metoda draw)
 	"""
-	def __init__(self, pos, vel, ang, ang_vel, image, info):
+	def __init__(self, pos, vel, owner, ang, ang_vel, image, info):
 		self.pos = [pos[0],pos[1]]
 		self.vel = [vel[0],vel[1]]
 		self.angle = ang
@@ -63,6 +63,7 @@ class Sprite:
 		self.lifespan = info.get_lifespan()
 		self.animated = info.get_animated()
 		self.age = 0
+		self.owner = owner
                
 	def draw(self, screen,tr_x,tr_y):
 		if self.animated:
