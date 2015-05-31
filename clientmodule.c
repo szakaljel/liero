@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include <pthread.h>
 #include "queque.h"
@@ -108,6 +109,7 @@ initclient(void)
 static PyObject *
 client_init(PyObject *self,PyObject *args)
 {
+    int i = 1;
 
     struct timeval timeout;
 
@@ -145,6 +147,10 @@ client_init(PyObject *self,PyObject *args)
 
 
     //test timeoutow
+
+    
+    if(setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (void *)&i, sizeof(i)))
+        error("setsockopt failed\n");
 
     if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,sizeof(timeout)) < 0)
         error("setsockopt failed\n");

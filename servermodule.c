@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include <pthread.h>
 #include "queque.h"
@@ -118,6 +119,7 @@ static PyObject *
 server_init(PyObject *self,PyObject * args)
 {
     int i;
+    int j=1;
     char *port;
     
     struct timeval timeout;
@@ -160,9 +162,11 @@ server_init(PyObject *self,PyObject * args)
         if (newsockfd[i] < 0) 
           error("ERROR on accept");
 
-        m=(MSG*)malloc(sizeof(MSG));
     
     //test timeoutow
+
+        if(setsockopt(newsockfd[i], IPPROTO_TCP, TCP_NODELAY, (void *)&j, sizeof(j)))
+            error("setsockopt failed\n");
 
         if (setsockopt (newsockfd[i], SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,sizeof(timeout)) < 0)
             error("setsockopt failed\n");
@@ -170,12 +174,6 @@ server_init(PyObject *self,PyObject * args)
         if (setsockopt (newsockfd[i], SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,sizeof(timeout)) < 0)
             error("setsockopt failed\n");
     
-        m->ident=ident;
-        m->x=0;
-        m->y=0;
-        ident++;
-
-        fifo_push(q_send[i],(void*)m);
 
         pthread_mutex_init(&mutex_send[i], NULL);
 	    pthread_mutex_init(&mutex_recv[i], NULL);

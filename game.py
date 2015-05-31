@@ -548,6 +548,8 @@ class controller_server(controller):
 
 	def loop_init(self,port_ip):
 		server.init(port_ip)
+		for i in range(1,4):
+			server.send((i,(i,0,0)))
 		
 	def communicate_keyboard(self):
 		for i in self.worm[1:]:
