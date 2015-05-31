@@ -397,6 +397,8 @@ class controller(object):
 		self.explosions = set()
 		self.FPS = 30
 		self.map = map()
+		self.background=pygame.image.load("images/background.jpg")
+		#self.background=pygame.transform.scale(self.background,(self.screen.get_width(),self.screen.get_height()))
 		location=self.map.loadMap("map")
 		#ustawienie pozycji wormow z pliku 
 		for i in range(4):
@@ -406,6 +408,10 @@ class controller(object):
 
 	def print_scores(self):
 		label = None
+		#ramka
+		rect=Rect(10,380,180,150)
+		pygame.draw.rect(self.screen,(50,50,100),rect)
+
 		for index, worm in enumerate(self.worm):
 			label = self.font.render("worm " + str(index) + " : " + str(worm.score), 1, colours[index])
 			self.screen.blit(label, (20, 400 + 30*index))
@@ -429,6 +435,9 @@ class controller(object):
 		#modyfikacja granic poruszania worma
 		self.worm[self.ident].max_x=self.map.xlen*self.map.x
 		self.worm[self.ident].max_y=self.map.ylen*self.map.y
+
+		#modyfikacja tla
+		self.background=pygame.transform.scale(self.background,(self.worm[self.ident].max_x,self.worm[self.ident].max_y))
 		
 		while True:
 			for event in pygame.event.get():
@@ -488,8 +497,8 @@ class controller(object):
 			    	
 			self.worm[self.ident].reload -= 1
 			
-			self.screen.fill((255,255,255))
-			(tr_x,tr_y) = self.map.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y)
+
+			(tr_x,tr_y) = self.map.drawMap(self.screen,self.worm[self.ident].x,self.worm[self.ident].y,self.background)
 			for w in self.worm:
 				if self.sprites_collide(w): # kolizja update'uje wynik tego, co wystrzelił pocisk
 					if w.ident == self.ident:

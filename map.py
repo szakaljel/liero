@@ -49,7 +49,7 @@ class map(object):
 		return ret
 		
 
-	def drawMap(self,screen,x,y):
+	def drawMap(self,screen,x,y,image):
 		
 		#wektor transformacji
 		trans_x=0
@@ -107,7 +107,9 @@ class map(object):
 		sr_segment[0]=int(sr_segment[0])
 		sr_segment[1]=int(sr_segment[1])
 
-		
+		#ewentualna zamiana na fill 
+		screen.blit(image,(0,0),pygame.Rect(trans_x,trans_y,self.xlen*self.x, self.ylen*self.y))
+
 		pos_x=v_x
 		pos_y=v_y
 

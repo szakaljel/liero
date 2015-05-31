@@ -13,9 +13,6 @@
 // nowa wersja w katalogu build/...
 
 #define CLIENT_SIZE 1
-//moze trzeba bedzie napisac del queque i msg zwalniac
-
-
 
 pthread_mutex_t mutex_send[CLIENT_SIZE];
 pthread_mutex_t mutex_recv[CLIENT_SIZE];
@@ -164,6 +161,7 @@ server_init(PyObject *self,PyObject * args)
           error("ERROR on accept");
 
         m=(MSG*)malloc(sizeof(MSG));
+    
     //test timeoutow
 
         if (setsockopt (newsockfd[i], SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,sizeof(timeout)) < 0)
@@ -193,7 +191,7 @@ static PyObject *
 server_send(PyObject *self, PyObject *args)
 {
     int komu;
-    //niwiem czy nie powoduje wycieku ale raczej nie
+    
     MSG *m=(MSG*)malloc(sizeof(MSG));
 
     if (!PyArg_ParseTuple(args, "(i(iii))",&komu,&(m->ident),&(m->x),&(m->y)))
@@ -241,7 +239,7 @@ static PyObject *
 server_close(PyObject *self)
 {
     int i;
-	//pthread_exit(&task);
+
     for(i=0;i<CLIENT_SIZE;i++)
     {
 	   pthread_mutex_destroy(&mutex_send[i]);
