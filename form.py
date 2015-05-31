@@ -85,6 +85,8 @@ class form(object):
 						ret=[]
 						for el in self.inputs:
 							ret.append(el.value)
+						screen.blit(self.background,(0,0))
+						pygame.display.update()
 						return ret 
 				elif event.type == QUIT:
 					pygame.quit()
